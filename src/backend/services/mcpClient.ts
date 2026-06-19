@@ -111,9 +111,12 @@ export async function executeMCPSync(
     }
   } else {
     // Local File Sync
-    console.info("MCP: Notion credentials missing. Saving entry to local file database.");
+    const missingKeys = [];
+    if (!notionKey) missingKeys.push("NOTION_API_KEY");
+    if (!notionDbId) missingKeys.push("NOTION_DATABASE_ID");
+    console.info(`MCP: Notion credentials missing. Missing keys: ${missingKeys.join(", ")}. Saving entry to local file database.`);
     const savedPath = saveNotionToSandbox(notionPayload);
-    result.notionDetails = `Local DB updated at: ${savedPath}`;
+    result.notionDetails = `Local DB updated at: ${savedPath}. (Missing env keys: ${missingKeys.join(", ")})`;
   }
 
   // 2. Gmail Sync
@@ -153,9 +156,13 @@ export async function executeMCPSync(
       result.success = false;
     }
   } else {
-    console.info("MCP: Gmail credentials missing. Saving email draft in Sandbox folder.");
+    const missingKeys = [];
+    if (!gmailClientId) missingKeys.push("GMAIL_CLIENT_ID");
+    if (!gmailClientSecret) missingKeys.push("GMAIL_CLIENT_SECRET");
+    if (!gmailRefreshToken) missingKeys.push("GMAIL_REFRESH_TOKEN");
+    console.info(`MCP: Gmail credentials missing. Missing keys: ${missingKeys.join(", ")}. Saving email draft in Sandbox folder.`);
     const savedPath = saveGmailToSandbox(emailSubject, emailBody);
-    result.gmailDetails = `Draft file saved at: ${savedPath}`;
+    result.gmailDetails = `Draft file saved at: ${savedPath}. (Missing env keys: ${missingKeys.join(", ")})`;
   }
 
   return result;

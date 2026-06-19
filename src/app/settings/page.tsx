@@ -268,9 +268,16 @@ export default function Settings() {
 
       {/* Gmail OAuth Settings Card */}
       <div className="glass-panel rounded-2xl p-6">
-        <h2 className="font-heading text-lg font-semibold text-white mb-6 flex items-center gap-2">
-          <Mail className="w-5 h-5 text-warning-amber" />
-          Model Context Protocol (MCP) — Gmail Client Options
+        <h2 className="font-heading text-lg font-semibold text-white mb-6 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Mail className="w-5 h-5 text-warning-amber" />
+            <span>Model Context Protocol (MCP) — Gmail Client Options</span>
+          </div>
+          {configStatus.gmail && (
+            <span className="text-[10px] text-success-emerald bg-success-emerald/10 px-1.5 py-0.5 rounded uppercase font-bold leading-none font-mono">
+              Configured in Env
+            </span>
+          )}
         </h2>
         
         <div className="space-y-4">
