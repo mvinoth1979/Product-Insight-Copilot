@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { llm } from "./llm";
 import { resolveDataPath } from "../utils/pathHelper";
+import { Pool } from "pg";
 
 export interface Theme {
   name: string;
@@ -133,13 +134,35 @@ export async function clusterReviewsFromCSV(
   csvFilePath: string = "data/cleaned_reviews.csv",
   forceFallback: boolean = false
 ): Promise<ClusterResult> {
-  const absolutePath = resolveDataPath(csvFilePath);
-  if (!fs.existsSync(absolutePath)) {
-    throw new Error(`Reviews CSV file not found at: ${absolutePath}`);
-  }
+  const dbUrl = process.env.DATABASE_URL;
+  let records: Record<string, string>[] = [];
 
-  const csvContent = fs.readFileSync(absolutePath, "utf8");
-  const records = parseCSV(csvContent);
+  if (dbUrl) {
+    console.log("Database URL configured. Reading reviews from PostgreSQL...");
+    const pool = new Pool({
+      connectionString: dbUrl,
+      ssl: { rejectUnauthorized: false },
+    });
+    const client = await pool.connect();
+    try {
+      const res = await client.query(`
+        SELECT reviewer_name AS "reviewerName", rating::text, review_text AS "reviewText", timestamp::text
+        FROM reviews
+        ORDER BY timestamp DESC
+      `);
+      records = res.rows;
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  } else {
+    const absolutePath = resolveDataPath(csvFilePath);
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error(`Reviews CSV file not found at: ${absolutePath}`);
+    }
+    const csvContent = fs.readFileSync(absolutePath, "utf8");
+    records = parseCSV(csvContent);
+  }
 
   if (records.length === 0) {
     return {

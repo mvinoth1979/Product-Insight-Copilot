@@ -3,7 +3,7 @@ import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
 import { scrapePlayStoreReviews } from "../services/scraper";
-import { cleanReviews, writeReviewsToCSV } from "../services/cleaner";
+import { cleanReviews, saveReviews } from "../services/cleaner";
 
 async function main() {
   const appId = process.env.GOOGLE_PLAY_APP_ID || "com.example.app";
@@ -17,8 +17,8 @@ async function main() {
     const cleanedReviews = cleanReviews(rawReviews, referenceDate);
     console.log(`Cleaned reviews count: ${cleanedReviews.length} (Filtered duplicates, old/empty entries).`);
 
-    const csvPath = writeReviewsToCSV(cleanedReviews, "data/cleaned_reviews.csv");
-    console.log(`Saved cleaned reviews CSV to: ${csvPath}`);
+    const csvPath = await saveReviews(cleanedReviews, "data/cleaned_reviews.csv");
+    console.log(`Saved cleaned reviews to: ${csvPath}`);
     
     console.log("Ingestion Layer execution complete.");
   } catch (error) {

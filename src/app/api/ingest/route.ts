@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { scrapePlayStoreReviews } from "@/backend/services/scraper";
-import { cleanReviews, writeReviewsToCSV } from "@/backend/services/cleaner";
+import { cleanReviews, saveReviews } from "@/backend/services/cleaner";
 
 export async function POST() {
   try {
@@ -9,7 +9,7 @@ export async function POST() {
     const raw = await scrapePlayStoreReviews(appId);
     const referenceDate = "2026-06-19T15:13:48Z";
     const cleaned = cleanReviews(raw, referenceDate);
-    const csvPath = writeReviewsToCSV(cleaned, "data/cleaned_reviews.csv");
+    const csvPath = await saveReviews(cleaned, "data/cleaned_reviews.csv");
     
     return NextResponse.json({
       success: true,
