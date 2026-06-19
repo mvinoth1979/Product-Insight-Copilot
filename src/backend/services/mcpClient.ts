@@ -23,20 +23,20 @@ export interface MCPResult {
 
 // Build RFC 2822 Base64url email for Gmail API
 function buildRawEmail(subject: string, body: string, to: string = "support-leads@company.com"): string {
-  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
   const emailLines = [
     `To: ${to}`,
-    `Subject: ${utf8Subject}`,
-    'Content-Type: text/plain; charset="utf-8"',
-    'Content-Transfer-Encoding: base64',
-    '',
-    Buffer.from(body).toString("base64")
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    body
   ];
   return Buffer.from(emailLines.join("\r\n"))
     .toString("base64")
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, ''); // Base64URL encoding
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, ""); // Base64URL encoding
 }
 
 export async function executeMCPSync(
