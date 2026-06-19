@@ -22,6 +22,7 @@ export default function ApprovalWorkspace({ onSuccess }: ApprovalWorkspaceProps)
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [feeName, setFeeName] = useState("Exit Load");
   const [complaints, setComplaints] = useState<string[]>([]);
@@ -55,6 +56,7 @@ export default function ApprovalWorkspace({ onSuccess }: ApprovalWorkspaceProps)
 
   const handleApprove = async () => {
     setSubmitting(true);
+    setErrorMsg(null);
     try {
       // Sprint 4 connects this to a real API `/api/approve`. For Sprint 3, we mock a brief success
       const res = await fetch("/api/approve", {
@@ -68,14 +70,35 @@ export default function ApprovalWorkspace({ onSuccess }: ApprovalWorkspaceProps)
         }),
       });
 
-      // Simple mock fallback if API endpoint is not implemented yet in Sprint 4
-      if (res.ok || res.status === 404) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setSuccess(true);
-        if (onSuccess) onSuccess();
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setSuccess(true);
+          if (onSuccess) onSuccess();
+        } else {
+          // One or more integrations failed
+          let errorDetails = "";
+          if (json.gmailStatus === "FALLBACK_SANDBOX") {
+            errorDetails += `Gmail Error: ${json.gmailDetails || "Failed to create draft"}\n`;
+          }
+          if (json.notionStatus === "FALLBACK_SANDBOX") {
+            errorDetails += `Notion Error: ${json.notionDetails || "Failed to sync to database"}\n`;
+          }
+          setErrorMsg(errorDetails || "Live sync failed, fell back to sandbox.");
+        }
+      } else {
+        if (res.status === 404) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          setSuccess(true);
+          if (onSuccess) onSuccess();
+        } else {
+          const json = await res.json().catch(() => ({}));
+          setErrorMsg(json.error || `Server returned error status ${res.status}`);
+        }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Approval request failed:", e);
+      setErrorMsg(`Request failed: ${e.message || String(e)}`);
     } finally {
       setSubmitting(false);
     }
@@ -169,6 +192,16 @@ export default function ApprovalWorkspace({ onSuccess }: ApprovalWorkspaceProps)
             <FileText className="w-5 h-5 text-accent-indigo" />
             <h2 className="font-heading font-semibold text-white">AI-Drafted Outputs</h2>
           </div>
+
+          {errorMsg && (
+            <div className="p-4 rounded-xl bg-error-rose/10 border border-error-rose/30 text-xs text-white leading-relaxed flex gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <AlertTriangle className="w-4.5 h-4.5 text-error-rose shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-bold text-error-rose block text-sm">Integration / Dispatch Error</span>
+                <p className="whitespace-pre-wrap font-mono text-text-muted text-[11px] leading-relaxed">{errorMsg}</p>
+              </div>
+            </div>
+          )}
 
           {/* Output 1: Weekly Pulse Brief */}
           <div className="space-y-2">

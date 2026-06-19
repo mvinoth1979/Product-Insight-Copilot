@@ -107,6 +107,7 @@ export async function executeMCPSync(
       saveNotionToSandbox(notionPayload);
       result.notionStatus = "FALLBACK_SANDBOX";
       result.notionDetails = String(error);
+      result.success = false;
     }
   } else {
     // Local File Sync
@@ -149,6 +150,7 @@ export async function executeMCPSync(
       const draftPath = saveGmailToSandbox(emailSubject, emailBody);
       result.gmailStatus = "FALLBACK_SANDBOX";
       result.gmailDetails = `Failed live draft creation, saved to: ${draftPath}. Error: ${String(error)}`;
+      result.success = false;
     }
   } else {
     console.info("MCP: Gmail credentials missing. Saving email draft in Sandbox folder.");
